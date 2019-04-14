@@ -18,7 +18,7 @@ func Logger(fn func(string)) gin.HandlerFunc {
 			requestID = "{missing-request-id}"
 		}
 
-		msg := fmt.Sprintf("%s [%s] %s%s", requestID, c.Request.Method, c.Request.URL.Path, c.Request.URL.RawQuery)
+		msg := fmt.Sprintf("%s [%s] %s", requestID, c.Request.Method, c.Request.URL.Path)
 
 		fn(msg)
 
