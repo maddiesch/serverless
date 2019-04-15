@@ -63,13 +63,20 @@ func createAppInstance() {
 }
 
 func recoveryHandler(c *gin.Context, e interface{}) error {
-	err := e.(error)
+	var details string
 
-	Logf("Recover From Error: %v", err)
+	switch value := e.(type) {
+	case error:
+		details = fmt.Sprintf("%v", value)
+	case string:
+		details = value
+	default:
+		panic(e)
+	}
 
 	meta := make(map[string]interface{})
 	if IsDebug() {
-		meta["ErrorDetails"] = fmt.Sprintf("%v", err)
+		meta["ErrorDetails"] = fmt.Sprintf("%v", details)
 	}
 
 	return ErrorResponse(c, []*Error{
