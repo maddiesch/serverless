@@ -2,6 +2,7 @@ package serverless
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -49,13 +50,35 @@ func LambdaHandler(setup func()) func(ctx context.Context, req events.APIGateway
 func createAppInstance() {
 	app := gin.New()
 
+	app.Use(gin.Recovery())
+	app.Use(middleware.Recovery(recoveryHandler))
 	app.Use(middleware.Runtime())
 	app.Use(middleware.RequestID())
 	app.Use(middleware.Logger(LogMessage))
-	app.Use(gin.Recovery())
 
 	appInstance = &App{
 		engine:  app,
 		adapter: ginadapter.New(app),
 	}
+}
+
+func recoveryHandler(c *gin.Context, e interface{}) error {
+	err := e.(error)
+
+	Logf("Recover From Error: %v", err)
+
+	meta := make(map[string]interface{})
+	if IsDebug() {
+		meta["ErrorDetails"] = fmt.Sprintf("%v", err)
+	}
+
+	return ErrorResponse(c, []*Error{
+		&Error{
+			Status:      "500",
+			Code:        "unknown_error",
+			Title:       "Unknown Error",
+			Description: "An unknown error occurred. Please try your request again",
+			Meta:        &meta,
+		},
+	})
 }

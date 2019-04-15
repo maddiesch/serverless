@@ -16,6 +16,7 @@ require (
 	github.com/segmentio/ksuid v1.0.2
 	github.com/stretchr/testify v1.3.0
 	github.com/ugorji/go v1.1.4 // indirect
+	golang.org/x/net v0.0.0-20190415100556-4a65cf94b679 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
 	gopkg.in/go-playground/validator.v9 v9.28.0
