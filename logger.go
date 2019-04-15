@@ -31,6 +31,12 @@ func Log(a ...interface{}) {
 	LogMessage(msg)
 }
 
+// Logf writes the formated log message to the shared logger.
+func Logf(format string, a ...interface{}) {
+	msg := fmt.Sprintf(format, a...)
+	LogMessage(msg)
+}
+
 // LogMessage writes the string to the shared logger
 func LogMessage(msg string) {
 	fmt.Fprintf(GetLogger().Target, "[SER] %s\n", msg)
