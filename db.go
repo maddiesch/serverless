@@ -52,6 +52,9 @@ var (
 
 	// ErrRecordDoesNotExist is returned when a `UpdateRecord` call fails because the item doesn't exist.
 	ErrRecordDoesNotExist = errors.New("record failed to update because it does not exist")
+
+	// ErrRecordNotFound is returned when a single record can not be found.
+	ErrRecordNotFound = errors.New("record does not exist")
 )
 
 // CreateRecord writes the record to the table if it doesn't already exist.
@@ -64,7 +67,11 @@ func (db *DB) CreateRecord(r Record) error {
 		}
 	}
 
-	item := createFullItem(r)
+	item, err := createFullItem(r)
+	if err != nil {
+		return err
+	}
+
 	ce := fmt.Sprintf("attribute_not_exists(%s)", db.createKeyName)
 
 	params := &dynamodb.PutItemInput{
@@ -73,7 +80,7 @@ func (db *DB) CreateRecord(r Record) error {
 		Item:                item,
 	}
 
-	_, err := db.Client.PutItem(params)
+	_, err = db.Client.PutItem(params)
 
 	if IsConditionalCheckFailure(err) {
 		return ErrRecordAlreadyExist
@@ -92,7 +99,11 @@ func (db *DB) UpdateRecord(r Record) error {
 		}
 	}
 
-	item := createFullItem(r)
+	item, err := createFullItem(r)
+	if err != nil {
+		return err
+	}
+
 	ce := fmt.Sprintf("attribute_exists(%s)", db.createKeyName)
 
 	params := &dynamodb.PutItemInput{
@@ -101,7 +112,7 @@ func (db *DB) UpdateRecord(r Record) error {
 		Item:                item,
 	}
 
-	_, err := db.Client.PutItem(params)
+	_, err = db.Client.PutItem(params)
 
 	if IsConditionalCheckFailure(err) {
 		return ErrRecordDoesNotExist
@@ -120,14 +131,42 @@ func (db *DB) SaveRecord(r Record) error {
 		}
 	}
 
-	item := createFullItem(r)
+	item, err := createFullItem(r)
+	if err != nil {
+		return err
+	}
 
 	params := &dynamodb.PutItemInput{
 		TableName: db.tn(),
 		Item:      item,
 	}
 
-	_, err := db.Client.PutItem(params)
+	_, err = db.Client.PutItem(params)
+
+	return err
+}
+
+// DestroyRecord deletes the item
+func (db *DB) DestroyRecord(r Record) error {
+	valid, validate := r.(Validatable)
+	if validate {
+		err := valid.Validate()
+		if err != nil {
+			return err
+		}
+	}
+
+	key, err := r.Key()
+	if err != nil {
+		return err
+	}
+
+	input := &dynamodb.DeleteItemInput{
+		TableName: db.tn(),
+		Key:       key,
+	}
+
+	_, err = db.Client.DeleteItem(input)
 
 	return err
 }
@@ -140,13 +179,20 @@ func IsConditionalCheckFailure(err error) bool {
 	return false
 }
 
-func createFullItem(r Record) map[string]*dynamodb.AttributeValue {
-	key := r.Key()
-	attr := r.Attributes()
+func createFullItem(r Record) (map[string]*dynamodb.AttributeValue, error) {
+	key, err := r.Key()
+	if err != nil {
+		return map[string]*dynamodb.AttributeValue{}, err
+	}
+
+	attr, err := r.Attributes()
+	if err != nil {
+		return map[string]*dynamodb.AttributeValue{}, err
+	}
 
 	for k, v := range key {
 		attr[k] = v
 	}
 
-	return attr
+	return attr, nil
 }
