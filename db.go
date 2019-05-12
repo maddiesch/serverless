@@ -8,6 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+
+	"github.com/maddiesch/serverless/amazon"
+	"github.com/maddiesch/serverless/sam"
 )
 
 // DB contains a DynamoDB config
@@ -19,12 +22,9 @@ type DB struct {
 
 // NewDB returns a new DB instance with a default session.
 func NewDB(tn string, kn string) *DB {
-	ses := session.Must(session.NewSessionWithOptions(session.Options{
-		Config:            aws.Config{Region: aws.String(DefaultEnv("AWS_REGION", "us-east-1"))},
-		SharedConfigState: session.SharedConfigEnable,
-	}))
+	ses := amazon.BaseSession().Copy()
 
-	if IsLocal() {
+	if sam.IsLocal() {
 		ses.Config.Endpoint = aws.String(DefaultEnv("AWS_DYNAMODB_ENDPOINT", "http://docker.for.mac.localhost:8000"))
 	}
 

@@ -2,19 +2,14 @@ package serverless
 
 import (
 	"os"
-	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/maddiesch/serverless/sam"
 )
-
-// IsLocal returns a boolean if the app is running in the SAM local env
-func IsLocal() bool {
-	return strings.Compare(os.Getenv("AWS_SAM_LOCAL"), "true") == 0
-}
 
 // IsDebug returns a boolean if the current gin mode is not release
 func IsDebug() bool {
-	return IsLocal() || strings.Compare(gin.Mode(), gin.ReleaseMode) != 0
+	return sam.IsLocal() || gin.Mode() == gin.ReleaseMode
 }
 
 // DefaultEnv fetches an env variable. If it's blank it will return the default.

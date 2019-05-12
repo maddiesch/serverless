@@ -15,17 +15,17 @@ type testRecord struct {
 	Value string
 }
 
-func (r *testRecord) Attributes() map[string]*dynamodb.AttributeValue {
+func (r *testRecord) Attributes() (map[string]*dynamodb.AttributeValue, error) {
 	return map[string]*dynamodb.AttributeValue{
 		"Value": {S: aws.String(r.Value)},
-	}
+	}, nil
 }
 
-func (r *testRecord) Key() map[string]*dynamodb.AttributeValue {
+func (r *testRecord) Key() (map[string]*dynamodb.AttributeValue, error) {
 	return map[string]*dynamodb.AttributeValue{
 		"PK": {S: aws.String(r.PK)},
 		"SK": {S: aws.String(r.SK)},
-	}
+	}, nil
 }
 
 func (r *testRecord) Assign(v map[string]*dynamodb.AttributeValue) error {
