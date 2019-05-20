@@ -12,8 +12,8 @@ func IsDebug() bool {
 	return sam.IsLocal() || gin.Mode() == gin.ReleaseMode
 }
 
-// DefaultEnv fetches an env variable. If it's blank it will return the default.
-func DefaultEnv(key string, value string) string {
+// GetenvDefault fetches an env variable. If it's blank it will return the default.
+func GetenvDefault(key string, value string) string {
 	val := os.Getenv(key)
 	if len(val) == 0 {
 		return value

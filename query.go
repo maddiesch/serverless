@@ -13,7 +13,7 @@ type QueryPaginatedOutput struct {
 	Records []map[string]*dynamodb.AttributeValue
 
 	// RequestCount is the total number of requests made to DynamoDB
-	RequestCount uint64
+	RequestCount int
 }
 
 // QueryPaginated perform a paginated dynamodb query
@@ -28,7 +28,7 @@ type QueryPaginatedOutput struct {
 func QueryPaginated(db *DB, handler QueryPaginatedBuilder) (*QueryPaginatedOutput, error) {
 	results := []map[string]*dynamodb.AttributeValue{}
 	exclusiveStartKey := map[string]*dynamodb.AttributeValue{}
-	var count uint64
+	var count int
 
 	for {
 		query, err := handler()

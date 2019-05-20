@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/segmentio/ksuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,4 +41,15 @@ func TestCreateRecord(t *testing.T) {
 
 	err = testDB().UpdateRecord(record)
 	require.NoError(t, err)
+}
+
+func TestMarshalRecord(t *testing.T) {
+	record := &testRecord{PK: "primary_key", SK: ksuid.New().String(), Value: "My Test Record"}
+
+	attr, err := MarshalRecord(record)
+	require.NoError(t, err)
+
+	assert.NotNil(t, attr["PK"].S)
+	assert.NotNil(t, attr["SK"].S)
+	assert.NotNil(t, attr["Value"].S)
 }
