@@ -7,17 +7,17 @@ import (
 
 // CreateDynamoTableInput contains the required values for a create table call
 type CreateDynamoTableInput struct {
-	Client                 *dynamodb.DynamoDB    `validates:"required"`
-	TableName              string                `validates:"min=1"`
-	PrimaryKey             *CreateDynamoTableKey `validates:"required"`
+	Client                 *dynamodb.DynamoDB    `validate:"required"`
+	TableName              string                `validate:"min=1"`
+	PrimaryKey             *CreateDynamoTableKey `validate:"required"`
 	GlobalSecondaryIndexes map[string]*CreateDynamoTableKey
 	LocalSecondaryIndexes  map[string]*CreateDynamoTableKey
 }
 
 // CreateDynamoTableKey contains the partition & range key pair
 type CreateDynamoTableKey struct {
-	PartitionKey string `validates:"min=2"`
-	RangeKey     string `validates:"min=2"`
+	PartitionKey string `validate:"min=2"`
+	RangeKey     string `validate:"min=2"`
 }
 
 func (k *CreateDynamoTableKey) attributes() []*dynamodb.AttributeDefinition {
