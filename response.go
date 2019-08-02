@@ -50,7 +50,7 @@ func ErrorResponse(c *gin.Context, errs []*Error) error {
 		return fmt.Errorf("err status is not a valid HTTP status code (%d)", status)
 	}
 
-	c.JSON(status, gin.H{"errors": errs})
+	c.AbortWithStatusJSON(status, gin.H{"errors": errs})
 
 	return nil
 }
