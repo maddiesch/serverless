@@ -25,7 +25,7 @@ var (
 func CreateSession() (*session.Session, error) {
 	region := os.Getenv("AWS_REGION")
 	if region == "" {
-		region = "us-east-1"
+		region = DefaultRegion
 	}
 	return session.NewSession(&aws.Config{Region: aws.String(region)})
 }

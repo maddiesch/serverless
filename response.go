@@ -1,6 +1,7 @@
 package serverless
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -17,14 +18,33 @@ type Error struct {
 	Meta        *map[string]interface{} `json:"meta,omitempty"`
 }
 
-// NewResponseError returns a new ResponseError with details from the passed error
-func NewResponseError(status int, code string, err error) *Error {
-	return &Error{
+func (e Error) Error() string {
+	data, _ := json.Marshal(e)
+	return string(data)
+}
+
+// NewResponseErr creates a new error
+func NewResponseErr(status int, code, description string) Error {
+	return Error{
 		Status:      strconv.Itoa(status),
 		Code:        code,
 		Title:       http.StatusText(status),
-		Description: fmt.Sprintf("%v", err),
+		Description: description,
 	}
+}
+
+// NewResponseError returns a new ResponseError with details from the passed error
+func NewResponseError(status int, code string, err error) *Error {
+	new := NewResponseErr(status, code, err.Error())
+	return &new
+}
+
+// NewResponseErrorFromErr creates a new response error from a generic error
+func NewResponseErrorFromErr(err error) *Error {
+	if re, ok := err.(Error); ok {
+		return &(re)
+	}
+	return NewResponseError(500, "internal_server_error", err)
 }
 
 // ErrorResponse sets a JSON response pre-formatted with an error

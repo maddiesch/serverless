@@ -54,7 +54,7 @@ func createAppInstance() {
 	app.Use(middleware.Recovery(recoveryHandler))
 	app.Use(middleware.Runtime())
 	app.Use(middleware.RequestID())
-	app.Use(middleware.Logger(LogMessage))
+	app.Use(middleware.Logger(func(str string) { Log(str) }))
 
 	appInstance = &App{
 		engine:  app,

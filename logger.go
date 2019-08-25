@@ -2,25 +2,20 @@ package serverless
 
 import (
 	"fmt"
-	"io"
+	"log"
 	"os"
 	"sync"
 )
 
-// Logger contains configuration for logging
-type Logger struct {
-	Target io.Writer
-}
-
 var (
-	loggerInstance   *Logger
+	loggerInstance   *log.Logger
 	loggerSetupNonce sync.Once
 )
 
 // GetLogger returns the shared logger instance.
-func GetLogger() *Logger {
+func GetLogger() *log.Logger {
 	loggerSetupNonce.Do(func() {
-		loggerInstance = &Logger{Target: os.Stderr}
+		loggerInstance = log.New(os.Stderr, "[SER] ", log.LstdFlags|log.Lmicroseconds|log.LUTC)
 	})
 	return loggerInstance
 }
@@ -28,16 +23,11 @@ func GetLogger() *Logger {
 // Log writes the interfaces to the shared logger
 func Log(a ...interface{}) {
 	msg := fmt.Sprint(a...)
-	LogMessage(msg)
+	GetLogger().Print(msg)
 }
 
 // Logf writes the formated log message to the shared logger.
 func Logf(format string, a ...interface{}) {
 	msg := fmt.Sprintf(format, a...)
-	LogMessage(msg)
-}
-
-// LogMessage writes the string to the shared logger
-func LogMessage(msg string) {
-	fmt.Fprintf(GetLogger().Target, "[SER] %s\n", msg)
+	GetLogger().Print(msg)
 }

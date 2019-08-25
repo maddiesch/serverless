@@ -2,7 +2,6 @@ package serverless
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 
@@ -47,14 +46,11 @@ func NewDBWithSession(ses *session.Session, tn string, kn string) *DB {
 	}
 }
 
-func (db *DB) tn() *string {
-	return aws.String(db.TableName)
-}
-
 // IsConditionalCheckFailure returns true if the error passed was caused by a ConditionalCheckFailedException
 func IsConditionalCheckFailure(err error) bool {
-	if ae, ok := err.(awserr.RequestFailure); ok && ae.Code() == "ConditionalCheckFailedException" {
-		return true
-	}
-	return false
+	return amazon.IsErrorCode(err, dynamodb.ErrCodeConditionalCheckFailedException)
+}
+
+func (db *DB) tn() *string {
+	return aws.String(db.TableName)
 }
