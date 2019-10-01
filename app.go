@@ -12,8 +12,18 @@ import (
 	"github.com/maddiesch/serverless/middleware"
 )
 
-// App is the serverless application. It handles Lambda requests.
-type App struct {
+// LambdaProxy allows lambda requests to be processed by serverless
+type LambdaProxy interface {
+	Proxy(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error)
+}
+
+// Application contains the methods needed to create the lambda proxy application
+type Application interface {
+	Adapter() LambdaProxy
+}
+
+// GinApp is the default gin application for serverless
+type GinApp struct {
 	engine  *gin.Engine
 	adapter *ginadapter.GinLambda
 }
@@ -21,11 +31,20 @@ type App struct {
 var (
 	appSetupNonce     sync.Once
 	handlerSetupNonce sync.Once
-	appInstance       *App
+	appInstance       *GinApp
 )
 
+var (
+	// App is the current global application
+	App Application
+)
+
+func init() {
+	App = SharedApp()
+}
+
 // SharedApp returns the singleton instance of the App.
-func SharedApp() *App {
+func SharedApp() *GinApp {
 	appSetupNonce.Do(createAppInstance)
 
 	return appInstance
@@ -33,8 +52,13 @@ func SharedApp() *App {
 
 // ConfigureGin performs the function passed in.
 // The passed function allows access to the underlying gin engine.
-func (a *App) ConfigureGin(cfg func(*gin.Engine)) {
+func (a *GinApp) ConfigureGin(cfg func(*gin.Engine)) {
 	cfg(a.engine)
+}
+
+// Adapter returns the lambda proxy
+func (a *GinApp) Adapter() LambdaProxy {
+	return a.adapter
 }
 
 // LambdaHandler is the function passed to `lambda.Start`.
@@ -43,7 +67,7 @@ func LambdaHandler(setup func()) func(ctx context.Context, req events.APIGateway
 	handlerSetupNonce.Do(setup)
 
 	return func(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-		return SharedApp().adapter.Proxy(req)
+		return App.Adapter().Proxy(req)
 	}
 }
 
@@ -56,7 +80,7 @@ func createAppInstance() {
 	app.Use(middleware.RequestID())
 	app.Use(middleware.Logger(func(str string) { Log(str) }))
 
-	appInstance = &App{
+	appInstance = &GinApp{
 		engine:  app,
 		adapter: ginadapter.New(app),
 	}

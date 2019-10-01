@@ -13,7 +13,7 @@ func Runtime() gin.HandlerFunc {
 		start := time.Now()
 
 		defer func(start time.Time) {
-			dur := time.Now().Sub(start)
+			dur := time.Since(start)
 			c.Header("X-Runtime", fmt.Sprintf("%0.02fms", dur.Seconds()*1e3))
 		}(start)
 
