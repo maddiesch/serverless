@@ -21,6 +21,11 @@ var (
 	}
 )
 
+var (
+	// CORSOriginValidator can be used to validate if the origin is valid
+	CORSOriginValidator func(string) bool
+)
+
 const (
 	accessControlAllowOriginHeader  = "Access-Control-Allow-Origin"
 	accessControlAllowMethodsHeader = "Access-Control-Allow-Methods"
@@ -39,6 +44,12 @@ func Cors(config *CorsConfiguration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if len(config.AccessControlAllowOrigin) > 0 {
 			c.Header(accessControlAllowOriginHeader, config.AccessControlAllowOrigin)
+		}
+		if CORSOriginValidator != nil {
+			origin := c.GetHeader("Origin")
+			if origin != "" && CORSOriginValidator(origin) {
+				c.Header(accessControlAllowOriginHeader, origin)
+			}
 		}
 		if len(config.AccessControlAllowMethods) > 0 {
 			c.Header(accessControlAllowMethodsHeader, strings.Join(config.AccessControlAllowMethods, ", "))
