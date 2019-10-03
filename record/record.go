@@ -30,10 +30,15 @@ var (
 type Record interface {
 	// Should return the primary key values for the record
 	Key() map[string]*dynamodb.AttributeValue
+}
 
-	Save(context.Context) error
+// ExtendedRecord allows for a Record to generate extra data during marshaling
+type ExtendedRecord interface {
+	Record
 
-	Destroy(context.Context) error
+	Marshal(map[string]*dynamodb.AttributeValue) error
+
+	Unmarshal(map[string]*dynamodb.AttributeValue) error
 }
 
 // Save writes the record into the DynamoDB table
@@ -72,12 +77,29 @@ func Marshal(r Record) (map[string]*dynamodb.AttributeValue, error) {
 		item[key] = value
 	}
 
+	if er, ok := r.(ExtendedRecord); ok {
+		if err := er.Marshal(item); err != nil {
+			return nil, err
+		}
+	}
+
 	return item, nil
 }
 
 // Unmarshal converts a DynamoDB item into a Record
 func Unmarshal(data map[string]*dynamodb.AttributeValue, r Record) error {
-	return dba.UnmarshalMap(data, r)
+	err := dba.UnmarshalMap(data, r)
+	if err != nil {
+		return err
+	}
+
+	if er, ok := r.(ExtendedRecord); ok {
+		if err := er.Unmarshal(data); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func init() {
