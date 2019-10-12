@@ -10,6 +10,15 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	dba "github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/maddiesch/serverless/amazon"
+	"github.com/maddiesch/serverless/sam"
+)
+
+var (
+	// DynamoDBEndpointEnvKey is the name of the environment variable used to override an environment
+	DynamoDBEndpointEnvKey = "AWS_DYNAMODB_ENDPOINT"
+
+	// DynamoDBEndpointDefault is the default value for the endpoint if we're running locally
+	DynamoDBEndpointDefault = "http://docker.for.mac.localhost:8000"
 )
 
 // ClientProvider is the function signature for a client provider
@@ -19,7 +28,20 @@ var (
 	// DefaultClientProvider is the the function that will be called when a record
 	// operation is needed but there is no active client
 	DefaultClientProvider = func() (*dynamodb.DynamoDB, error) {
-		return dynamodb.New(amazon.BaseSession()), nil
+		session, err := amazon.CreateSession()
+		if err != nil {
+			return nil, err
+		}
+
+		if sam.IsLocal() {
+			endpoint := os.Getenv(DynamoDBEndpointEnvKey)
+			if endpoint == "" {
+				endpoint = DynamoDBEndpointDefault
+			}
+			session.Config.Endpoint = aws.String(endpoint)
+		}
+
+		return dynamodb.New(session), nil
 	}
 
 	// TableName is the table name pointer for the DynamoDB table
@@ -126,4 +148,12 @@ func Client() *dynamodb.DynamoDB {
 	}
 
 	return sharedClient
+}
+
+// ResetClient will ensure that a new shared client is created on the next run
+func ResetClient() {
+	clientMutex.Lock()
+	defer clientMutex.Unlock()
+
+	sharedClient = nil
 }

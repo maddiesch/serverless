@@ -12,19 +12,10 @@ var (
 
 	// AccessControlAllowHeadersDefaults is the allowed headers for CORS
 	AccessControlAllowHeadersDefaults = []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}
-
-	// DefaultCorsConfiguration is the default configuration for CORS middleware
-	DefaultCorsConfiguration = &CorsConfiguration{
-		AccessControlAllowOrigin:  "*",
-		AccessControlAllowMethods: AccessControlAllowMethodsDefaults,
-		AccessControlAllowHeaders: AccessControlAllowHeadersDefaults,
-	}
 )
 
-var (
-	// CORSOriginValidator can be used to validate if the origin is valid
-	CORSOriginValidator func(string) bool
-)
+// CORSOriginProvider can be used to validate if the origin is valid
+type CORSOriginProvider func(string) string
 
 const (
 	accessControlAllowOriginHeader  = "Access-Control-Allow-Origin"
@@ -32,24 +23,27 @@ const (
 	accessControlAllowHeadersHeader = "Access-Control-Allow-Headers"
 )
 
-// CorsConfiguration contains all the options for CORS middleware
-type CorsConfiguration struct {
-	AccessControlAllowOrigin  string
+// CORSConfiguration contains all the options for CORS middleware
+type CORSConfiguration struct {
+	OriginProvider            CORSOriginProvider
 	AccessControlAllowMethods []string
 	AccessControlAllowHeaders []string
 }
 
-// Cors middleware handles adding headers for requests.
-func Cors(config *CorsConfiguration) gin.HandlerFunc {
+// DefaultCORS returns a default CORS configuration
+func DefaultCORS(fn CORSOriginProvider) gin.HandlerFunc {
+	return CORS(&CORSConfiguration{
+		OriginProvider:            fn,
+		AccessControlAllowMethods: AccessControlAllowMethodsDefaults,
+		AccessControlAllowHeaders: AccessControlAllowHeadersDefaults,
+	})
+}
+
+// CORS middleware handles adding headers for requests.
+func CORS(config *CORSConfiguration) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if len(config.AccessControlAllowOrigin) > 0 {
-			c.Header(accessControlAllowOriginHeader, config.AccessControlAllowOrigin)
-		}
-		if CORSOriginValidator != nil {
-			origin := c.GetHeader("Origin")
-			if origin != "" && CORSOriginValidator(origin) {
-				c.Header(accessControlAllowOriginHeader, origin)
-			}
+		if origin := config.OriginProvider(c.GetHeader("Origin")); origin != "" {
+			c.Header(accessControlAllowOriginHeader, origin)
 		}
 		if len(config.AccessControlAllowMethods) > 0 {
 			c.Header(accessControlAllowMethodsHeader, strings.Join(config.AccessControlAllowMethods, ", "))

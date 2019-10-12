@@ -9,6 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/segmentio/ksuid"
+
+	"github.com/maddiesch/serverless/logger"
 )
 
 var (
@@ -22,7 +24,7 @@ func testDB() *DB {
 
 		testDBInstance = NewDB(fmt.Sprintf("serverless-test-table-%s", ksuid.New().String()), "SK")
 
-		Log("Create Test Table: ", testDBInstance.TableName)
+		logger.Print("Create Test Table: ", testDBInstance.TableName)
 
 		table := &dynamodb.CreateTableInput{
 			TableName: testDBInstance.tn(),
@@ -52,7 +54,7 @@ func testDB() *DB {
 }
 
 func teardownDB() {
-	Log("Delete Test Table: ", testDBInstance.TableName)
+	logger.Print("Delete Test Table: ", testDBInstance.TableName)
 
 	_, err := testDB().Client.DeleteTable(&dynamodb.DeleteTableInput{TableName: testDB().tn()})
 	if err != nil {
