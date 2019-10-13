@@ -35,10 +35,12 @@ func buildMiddleware(fn middleware.Handler) gin.HandlerFunc {
 		go func() {
 			defer close(aborter)
 
-			fn(ctx, c.Writer, c.Request, func(err error) {
+			new := fn(ctx, c.Writer, c.Request, func(err error) {
 				aborter <- err
 				runtime.Goexit()
 			})
+
+			c.Set(ginSubContextKey, new)
 		}()
 
 		err := <-aborter
